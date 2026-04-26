@@ -35,6 +35,7 @@ cp .env.example .env.local
 ```bash
 ADMIN_PASSWORD=
 ADMIN_SESSION_SECRET=
+ADMIN_DB_SECRET=
 ```
 
 项目已预填 Supabase URL：
@@ -43,7 +44,7 @@ ADMIN_SESSION_SECRET=
 NEXT_PUBLIC_SUPABASE_URL=https://girtuxhajaxhmnbmnvxo.supabase.co
 ```
 
-还需要在 Vercel 中补充 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 或 `SUPABASE_SERVICE_ROLE_KEY` 才能启用真实数据库读写。
+线上已支持两种后台写入方式：优先使用 `SUPABASE_SERVICE_ROLE_KEY`；如果不提供 service role，则使用 Supabase RPC + `ADMIN_DB_SECRET` 完成后台新增站点和模型价格写入。
 
 ## 数据库
 

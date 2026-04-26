@@ -106,7 +106,20 @@ export async function createResource(formData: FormData) {
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { error } = await supabase.from("resources").insert(payload);
+    const result = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? await supabase.from("resources").insert(payload)
+      : process.env.ADMIN_DB_SECRET
+        ? await supabase.rpc("admin_create_resource", {
+            admin_secret: process.env.ADMIN_DB_SECRET,
+            payload,
+          })
+        : {
+            error: new Error(
+              "缺少 SUPABASE_SERVICE_ROLE_KEY 或 ADMIN_DB_SECRET，无法写入后台数据",
+            ),
+          };
+
+    const { error } = result;
     if (error) throw new Error(error.message);
     await clearCache();
   }
@@ -124,7 +137,9 @@ export async function createModelPrice(formData: FormData) {
     input_usd_per_1m: Number(text(formData, "inputUsdPer1M") || 0),
     output_usd_per_1m: Number(text(formData, "outputUsdPer1M") || 0),
     context: text(formData, "context"),
+    max_output: text(formData, "maxOutput") || null,
     source: text(formData, "source") || "后台录入",
+    source_url: text(formData, "sourceUrl") || "",
     updated_at: new Date().toISOString().slice(0, 10),
   };
 
@@ -134,7 +149,22 @@ export async function createModelPrice(formData: FormData) {
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { error } = await supabase.from("model_prices").insert(payload);
+    const result = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? await supabase.from("model_prices").upsert(payload, {
+          onConflict: "provider,model",
+        })
+      : process.env.ADMIN_DB_SECRET
+        ? await supabase.rpc("admin_create_model_price", {
+            admin_secret: process.env.ADMIN_DB_SECRET,
+            payload,
+          })
+        : {
+            error: new Error(
+              "缺少 SUPABASE_SERVICE_ROLE_KEY 或 ADMIN_DB_SECRET，无法写入后台数据",
+            ),
+          };
+
+    const { error } = result;
     if (error) throw new Error(error.message);
     await clearCache();
   }
