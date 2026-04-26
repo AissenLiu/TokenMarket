@@ -5,7 +5,7 @@ const CODING_PLAN_SOURCE_URL =
   "https://raw.githubusercontent.com/wmpeng/codingplan/main/plans.json";
 const CODING_PLAN_REPO_URL = "https://github.com/wmpeng/codingplan";
 const CODING_PLAN_CACHE_KEY = "tokencat:coding-plans:wmpeng:v1";
-const CODING_PLAN_CACHE_SECONDS = 60 * 60;
+const CODING_PLAN_CACHE_SECONDS = 60 * 60 * 24;
 
 type RawCodingPlan = {
   vendor: string;
