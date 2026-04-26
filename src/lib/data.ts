@@ -62,7 +62,7 @@ async function withRedis<T>(key: string, loader: () => Promise<T>, ttl = 300) {
 }
 
 export async function getAppData(): Promise<AppData> {
-  return withRedis("tokencat:app-data:v1", async () => {
+  return withRedis("tokencat:app-data:v2", async () => {
     const supabase = getSupabaseAdmin();
     if (!supabase) return seedData;
 
@@ -78,7 +78,11 @@ export async function getAppData(): Promise<AppData> {
       ] = await Promise.all([
         supabase.from("categories").select("*").order("sort_order"),
         supabase.from("resources").select("*").order("score", { ascending: false }),
-        supabase.from("coding_plans").select("*").order("score", { ascending: false }),
+        supabase
+          .from("coding_plans")
+          .select("*")
+          .in("section", ["core", "ide-cli"])
+          .order("sort_order"),
         supabase.from("model_prices").select("*").order("provider"),
         supabase.from("model_rankings").select("*").order("rank"),
         supabase.from("relay_evaluations").select("*").order("checked_at", {
@@ -135,24 +139,29 @@ export async function getAppData(): Promise<AppData> {
         })),
         codingPlans: planResult.data.map((item) => ({
           id: item.id,
+          section: item.section ?? "core",
           vendor: item.vendor,
-          plan: item.plan,
+          planName: item.plan_name ?? item.vendor,
+          modelName: item.model_name ?? undefined,
           monthlyPrice: item.monthly_price,
-          quota: item.quota,
-          quotaType: item.quota_type ?? "Usage-based",
-          period: item.period ?? "month",
-          requests: item.requests ?? undefined,
-          tokens: item.tokens ?? undefined,
-          monthlyValue: item.monthly_value ?? undefined,
-          valueRatio: item.value_ratio ?? undefined,
+          officialNote: item.official_note ?? item.quota ?? "",
+          note: item.note ?? undefined,
+          usageType: item.usage_type ?? item.quota_type ?? undefined,
           tps: item.tps ?? undefined,
-          includedModels: item.included_models ?? [],
-          strengths: item.strengths ?? [],
-          bestFor: item.best_for,
+          requestsTokens5h: item.requests_tokens_5h ?? item.requests ?? undefined,
+          value5h: item.value_5h ?? undefined,
+          ratio5h: item.ratio_5h ?? undefined,
+          requestsTokensWeek: item.requests_tokens_week ?? undefined,
+          valueWeek: item.value_week ?? undefined,
+          ratioWeek: item.ratio_week ?? undefined,
+          requestsTokensMonth:
+            item.requests_tokens_month ?? item.tokens ?? undefined,
+          valueMonth: item.value_month ?? item.monthly_value ?? undefined,
+          ratioMonth: item.ratio_month ?? item.value_ratio ?? undefined,
           officialUrl: item.official_url,
           sourceName: item.source_name ?? "后台录入",
           sourceUrl: item.source_url ?? item.official_url,
-          score: item.score,
+          sortOrder: item.sort_order ?? 100,
         })),
         modelPrices: priceResult.data.map((item) => ({
           id: item.id,

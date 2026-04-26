@@ -44,24 +44,28 @@ export type Resource = {
 
 export type CodingPlan = {
   id: string;
+  section: "core" | "ide-cli";
   vendor: string;
-  plan: string;
+  planName: string;
+  modelName?: string;
   monthlyPrice: string;
-  quota: string;
-  quotaType: "Usage-based" | "Quota-based" | "Message-based" | "免费" | "API";
-  period: "5h" | "week" | "month";
-  requests?: string;
-  tokens?: string;
-  monthlyValue?: string;
-  valueRatio?: string;
+  officialNote: string;
+  note?: string;
+  usageType?: string;
   tps?: string;
-  includedModels: string[];
-  strengths: string[];
-  bestFor: string;
+  requestsTokens5h?: string;
+  value5h?: string;
+  ratio5h?: string;
+  requestsTokensWeek?: string;
+  valueWeek?: string;
+  ratioWeek?: string;
+  requestsTokensMonth?: string;
+  valueMonth?: string;
+  ratioMonth?: string;
   officialUrl: string;
   sourceName: string;
   sourceUrl: string;
-  score: number;
+  sortOrder: number;
 };
 
 export type ModelPrice = {

@@ -15,7 +15,7 @@ function text(formData: FormData, key: string) {
 async function clearCache() {
   const redis = getRedis();
   if (redis) {
-    await redis.del("tokencat:app-data:v1");
+    await redis.del("tokencat:app-data:v2");
   }
 }
 
