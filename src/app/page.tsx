@@ -14,7 +14,7 @@ export default async function Home() {
   const topSites = data.resources.slice(0, 6);
   const topRankings = data.modelRankings.slice(0, 5);
   const homeSources = data.sourceLinks.filter((source) =>
-    ["LiteLLM model prices", "awesome-coding-plan", "禾维 AI", "AI 比价"].includes(
+    ["LiteLLM model prices", "wmpeng/codingplan", "禾维 AI", "AI 比价"].includes(
       source.name,
     ),
   );

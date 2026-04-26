@@ -15,7 +15,10 @@ function text(formData: FormData, key: string) {
 async function clearCache() {
   const redis = getRedis();
   if (redis) {
-    await redis.del("tokencat:app-data:v2");
+    await Promise.all([
+      redis.del("tokencat:app-data:v5"),
+      redis.del("tokencat:coding-plans:wmpeng:v1"),
+    ]);
   }
 }
 

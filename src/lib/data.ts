@@ -1,7 +1,7 @@
 import { getRedis } from "./redis";
+import { getCodingPlans } from "./coding-plans";
 import {
   categories,
-  codingPlans,
   dashboardStats,
   modelPrices,
   modelRankings,
@@ -39,7 +39,7 @@ type AppData = {
 const seedData: AppData = {
   categories,
   resources,
-  codingPlans,
+  codingPlans: [],
   modelPrices,
   modelRankings,
   relayEvaluations,
@@ -62,15 +62,25 @@ async function withRedis<T>(key: string, loader: () => Promise<T>, ttl = 300) {
 }
 
 export async function getAppData(): Promise<AppData> {
-  return withRedis("tokencat:app-data:v2", async () => {
+  return withRedis("tokencat:app-data:v5", async () => {
+    const codingPlans = await getCodingPlans();
+    const dataWithRemotePlans = {
+      ...seedData,
+      categories: seedData.categories.map((category) =>
+        category.key === "coding"
+          ? { ...category, count: codingPlans.length }
+          : category,
+      ),
+      codingPlans,
+    };
+
     const supabase = getSupabaseAdmin();
-    if (!supabase) return seedData;
+    if (!supabase) return dataWithRemotePlans;
 
     try {
       const [
         categoryResult,
         resourceResult,
-        planResult,
         priceResult,
         rankingResult,
         evalResult,
@@ -78,11 +88,6 @@ export async function getAppData(): Promise<AppData> {
       ] = await Promise.all([
         supabase.from("categories").select("*").order("sort_order"),
         supabase.from("resources").select("*").order("score", { ascending: false }),
-        supabase
-          .from("coding_plans")
-          .select("*")
-          .in("section", ["core", "ide-cli"])
-          .order("sort_order"),
         supabase.from("model_prices").select("*").order("provider"),
         supabase.from("model_rankings").select("*").order("rank"),
         supabase.from("relay_evaluations").select("*").order("checked_at", {
@@ -96,13 +101,12 @@ export async function getAppData(): Promise<AppData> {
       if (
         categoryResult.error ||
         resourceResult.error ||
-        planResult.error ||
         priceResult.error ||
         rankingResult.error ||
         evalResult.error ||
         submissionResult.error
       ) {
-        return seedData;
+        return dataWithRemotePlans;
       }
 
       const activeSites = resourceResult.data.filter((item) => item.status === "active");
@@ -115,7 +119,7 @@ export async function getAppData(): Promise<AppData> {
           description: item.description,
           iconName: item.icon_name,
           sortOrder: item.sort_order,
-          count: item.count,
+          count: item.key === "coding" ? codingPlans.length : item.count,
         })),
         resources: resourceResult.data.map((item) => ({
           id: item.id,
@@ -137,32 +141,7 @@ export async function getAppData(): Promise<AppData> {
           models: item.models ?? undefined,
           verifiedAt: item.verified_at ?? undefined,
         })),
-        codingPlans: planResult.data.map((item) => ({
-          id: item.id,
-          section: item.section ?? "core",
-          vendor: item.vendor,
-          planName: item.plan_name ?? item.vendor,
-          modelName: item.model_name ?? undefined,
-          monthlyPrice: item.monthly_price,
-          officialNote: item.official_note ?? item.quota ?? "",
-          note: item.note ?? undefined,
-          usageType: item.usage_type ?? item.quota_type ?? undefined,
-          tps: item.tps ?? undefined,
-          requestsTokens5h: item.requests_tokens_5h ?? item.requests ?? undefined,
-          value5h: item.value_5h ?? undefined,
-          ratio5h: item.ratio_5h ?? undefined,
-          requestsTokensWeek: item.requests_tokens_week ?? undefined,
-          valueWeek: item.value_week ?? undefined,
-          ratioWeek: item.ratio_week ?? undefined,
-          requestsTokensMonth:
-            item.requests_tokens_month ?? item.tokens ?? undefined,
-          valueMonth: item.value_month ?? item.monthly_value ?? undefined,
-          ratioMonth: item.ratio_month ?? item.value_ratio ?? undefined,
-          officialUrl: item.official_url,
-          sourceName: item.source_name ?? "后台录入",
-          sourceUrl: item.source_url ?? item.official_url,
-          sortOrder: item.sort_order ?? 100,
-        })),
+        codingPlans,
         modelPrices: priceResult.data.map((item) => ({
           id: item.id,
           provider: item.provider,
@@ -226,7 +205,7 @@ export async function getAppData(): Promise<AppData> {
         source: "supabase",
       };
     } catch {
-      return seedData;
+      return dataWithRemotePlans;
     }
   });
 }
